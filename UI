@@ -1,0 +1,17 @@
+library(shiny)
+library(dplyr)
+library(stringr)
+
+shinyUI(fluidPage(
+    titlePanel("Predict next word"),
+    sidebarLayout(position = "left",
+                  sidebarPanel(
+                          h4("Enter Word"),
+                          textInput("inputString", "", value = ""), width = 15, align = "center",           
+                          h4(HTML("<center>Predicted Next Word</center>")),
+                          uiOutput("show")),
+                        mainPanel(
+                          
+                        )
+          )
+        ))
