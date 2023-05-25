@@ -1,1 +1,88 @@
 
+Detailed steps of exploratory analyses and pre-processing text corpora 
+#Used data libraries 
+library(tm)
+library(ggplot2)
+library(textclean)
+library(slam)
+library(wordcloud)
+library(textmineR)
+library(RWeka)
+
+
+
+#Upload data 
+con = file("C:\\Users\\sskhirtladze\\Desktop\\My Skills\\Data science\\Capstone\\Data\\en_US\\en_US.news.txt", "rb")
+news = readLines(con, encoding="UTF-8")
+close(con); rm(con)
+con = file("C:\\Users\\sskhirtladze\\Desktop\\My Skills\\Data science\\Capstone\\Data\\en_US\\en_US.blogs.txt", "rb")
+blogs = readLines(con, encoding="UTF-8")
+close(con); rm(con)
+
+con = file("C:\\Users\\sskhirtladze\\Desktop\\My Skills\\Data science\\Capstone\\Data\\en_US\\en_US.twitter.txt", "rb")
+twitter = readLines(con, encoding="UTF-8")
+close(con); rm(con)
+
+#Summarizing the Data
+statsdf = data.frame(type=c("Twitter", "Blogs", "News"), n.chars=NA, n.words=NA, n.lines=NA)
+sourcelist = list(twitter=twitter, blogs=blogs, news=news)
+countChar = function(text){sum(nchar(text))}
+countWord = function(text){sum(sapply(strsplit(text, "\\S+"), length))}
+statsdf$n.chars = sapply(sourcelist, countChar)
+statsdf$n.words = sapply(sourcelist, countWord)
+statsdf$n.lines = sapply(sourcelist, length)
+
+ggplot(statsdf[1:3, ], aes(x=factor(type), y=n.words/10^6)) + geom_bar(stat="identity") +
+labs(y="Word Count (x 1 million)", x="Corpus Type", title="Word Count by Corpus Type")
+
+#Sampling the data
+set.seed(1982)
+sampleVector = sample(1:3, 256000, replace=T)
+for(i in 1:length(sampleVector)){
+if(sampleVector[i]==1) textSamples = c(textSamples, paste(twitterSample[i]))
+if(sampleVector[i]==2) textSamples = c(textSamples, paste(blogSample[i]))
+if(sampleVector[i]==3) textSamples = c(textSamples, paste(newsSample[i]))
+}
+
+con = file("en_US.text.txt")
+writeLines(textSamples, con)
+close(con); rm(con)
+
+
+# Cleaning the data 
+## Only run this block if the R environment has been reset and the above code has been executed
+con = file("C:\\Users\\sskhirtladze\\Desktop\\My Skills\\Data science\\Capstone\\Data\\Sampled_data\\en_US.text.txt", "rb")
+textSamples2 = readLines(con, encoding="UTF-8")
+close(con); rm(con)
+#Transform to corpora:
+textSamples2 <- Corpus(VectorSource(textSamples2))
+
+
+
+
+#Clean Data
+ #Replacing "/", "@" and "|" with space
+toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
+textSamples2<- tm_map(textSamples2, toSpace, "/")
+textSamples2<- tm_map(textSamples2, toSpace, "@")
+textSamples2<- tm_map(textSamples2, toSpace, "\\|")
+# Convert the text to lower case
+textSamples2<- tm_map(textSamples2, content_transformer(tolower))
+# Remove numbers
+textSamples2<- tm_map(textSamples2, removeNumbers)
+# Remove english common stopwords
+textSamples2<- tm_map(textSamples2, removeWords, stopwords("english"))
+# Remove your own stop word
+# specify your custom stopwords as a character vector
+textSamples2<- tm_map(textSamples2, removeWords, c("s", "company", "team"))
+# Remove punctuations
+textSamples2<- tm_map(textSamples2, removePunctuation)
+# Eliminate extra white spaces
+textSamples2<- tm_map(textSamples2, stripWhitespace)
+# Text stemming - which reduces words to their root form
+textSamples2<- tm_map(textSamples2, stemDocument)
+
+### Save the work
+con = file("en_US.text2.txt")
+writeLines(textSamples, con)
+close(con); rm(con) 
